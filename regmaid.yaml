@@ -37,3 +37,4 @@ policies:
     retention: 30d # Remove images older than 30 days
     keep: 10 # Always keep the 10 newest images (minimum 1 if 'force' is not enabled)
     force: false # If enabled, allows 'keep' value of 0, which could delete all images
+    pageLimit: 10000 # Maximum number of repositories to fetch per page (0 for unlimited)

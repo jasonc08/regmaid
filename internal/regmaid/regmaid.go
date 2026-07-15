@@ -70,20 +70,47 @@ func (r *RegMaid) DeleteManifests(ctx context.Context, repo string, digests []st
 }
 
 // Get a list of all repositories matching with the specified match.
-func (r *RegMaid) GetRepositories(ctx context.Context, host string, match string) ([]string, error) {
+func (r *RegMaid) GetRepositories(ctx context.Context, host string, match string, pageLimit int) ([]string, error) {
 	// If the repository name is an exact match and not a wildcard expression, we short circuit to avoid calling the _catalog API
 	if !strings.Contains(match, "*") {
 		return []string{match}, nil
 	}
 
-	rl, err := r.client.RepoList(ctx, host)
-	if err != nil {
-		return nil, fmt.Errorf("error listing repositories for host %s: %v", host, err)
-	}
+	var allRepos []string
+	lastRepo := ""
 
-	repos, err := rl.GetRepos()
-	if err != nil {
-		return nil, fmt.Errorf("error extracting repositories for host %s: %v", host, err)
+	for {
+		var opts []scheme.RepoOpts
+		if pageLimit > 0 {
+			opts = append(opts, scheme.WithRepoLimit(pageLimit))
+		}
+		if lastRepo != "" {
+			opts = append(opts, scheme.WithRepoLast(lastRepo))
+		}
+
+		rl, err := r.client.RepoList(ctx, host, opts...)
+		if err != nil {
+			return nil, fmt.Errorf("error listing repositories for host %s: %v", host, err)
+		}
+
+		repos, err := rl.GetRepos()
+		if err != nil {
+			return nil, fmt.Errorf("error extracting repositories for host %s: %v", host, err)
+		}
+
+		if len(repos) == 0 {
+			break
+		}
+
+		for _, repo := range repos {
+			allRepos = append(allRepos, repo)
+		}
+
+		lastRepo = repos[len(repos)-1]
+
+		if pageLimit > 0 && len(repos) < pageLimit {
+			break
+		}
 	}
 
 	regex, err := getRegex(match, false)
@@ -92,7 +119,7 @@ func (r *RegMaid) GetRepositories(ctx context.Context, host string, match string
 	}
 
 	filteredRepos := make([]string, 0)
-	for _, repo := range repos {
+	for _, repo := range allRepos {
 		if regex.MatchString(repo) {
 			filteredRepos = append(filteredRepos, repo)
 		}

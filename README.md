@@ -50,6 +50,7 @@ policies:
     match: *-dev # Match tags ending with '-dev'
     retention: 30d # Delete images older than 30 days
     keep: 5 # Always keep at least newest 5 images
+    pageLimit: 1000 # Maximum repositories per page when using wildcard (0 for unlimited)
 ```
 
 ### Cleaning Registry

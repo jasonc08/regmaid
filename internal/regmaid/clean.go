@@ -63,7 +63,7 @@ func ExecuteClean(ctx context.Context) error {
 			}
 		}
 
-		repos, err := maid.GetRepositories(ctx, reg.Host, policy.Repository)
+		repos, err := maid.GetRepositories(ctx, reg.Host, policy.Repository, policy.PageLimit)
 		if err != nil {
 			fmt.Printf("Error getting repositories for policy %q: %v\n", policy.Name, err)
 			return err
